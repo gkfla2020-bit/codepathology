@@ -137,22 +137,28 @@ export function getMockStudentDetail(studentId: number) {
 
 export function getMockCourseHeatmap(_courseId: number) {
   const allDiags = Object.values(studentDiagnoses).flat();
-  const patternMap: Record<string, { name: string; count: number; affected: Set<number>; severities: Record<string, number> }> = {};
+  const patternMap: Record<string, { name: string; category: string; count: number; affected: Set<number>; severities: Record<string, number> }> = {};
 
   for (const d of allDiags) {
     if (!patternMap[d.pathology_code]) {
-      patternMap[d.pathology_code] = { name: d.pathology_name, count: 0, affected: new Set(), severities: {} };
+      patternMap[d.pathology_code] = { name: d.pathology_name, category: d.category, count: 0, affected: new Set(), severities: {} };
     }
     patternMap[d.pathology_code].count++;
     patternMap[d.pathology_code].affected.add(d.student_id);
     patternMap[d.pathology_code].severities[d.severity] = (patternMap[d.pathology_code].severities[d.severity] || 0) + 1;
   }
 
+  const total = allDiags.length || 1;
   return Object.entries(patternMap)
     .sort((a, b) => b[1].count - a[1].count)
     .map(([code, v]) => ({
-      pathology_code: code, pathology_name: v.name, total_count: v.count,
-      affected_students: v.affected.size, severity_distribution: v.severities,
+      pathology_code: code,
+      name: v.name,
+      category: v.category,
+      count: v.count,
+      percentage: Math.round((v.count / total) * 100),
+      affected_count: v.affected.size,
+      severity_breakdown: v.severities,
     }));
 }
 
@@ -160,8 +166,8 @@ export function getMockEpidemiology(_courseId: number) {
   const heatmap = getMockCourseHeatmap(_courseId);
   const top5 = heatmap.slice(0, 5);
   return {
-    top_patterns: top5,
-    ai_recommendation: `이번 주 클래스에서 "${top5[0]?.pathology_name || '패턴'}" 이슈가 가장 많이 발생했습니다. 다음 강의 초반 5분간 관련 개념을 복습하는 것을 권장합니다. 특히 ${top5.length}개 주요 패턴에 대해 실습 예제를 추가로 제공하면 효과적일 것입니다.`,
+    top_pathologies: top5.map((p) => ({ code: p.pathology_code, name: p.name, category: p.category, count: p.count })),
+    recommendation: `이번 주 클래스에서 "${top5[0]?.name || '패턴'}" 이슈가 가장 많이 발생했습니다. 다음 강의 초반 5분간 관련 개념을 복습하는 것을 권장합니다. 특히 ${top5.length}개 주요 패턴에 대해 실습 예제를 추가로 제공하면 효과적일 것입니다.`,
   };
 }
 
@@ -183,12 +189,17 @@ export function getMockComparative(_courseId: number) {
     const recurring = diags.filter((d) => d.is_recurring);
     const uniquePatterns = new Set(diags.map((d) => d.pathology_code));
     const sevDist: Record<string, number> = {};
-    for (const d of issues) sevDist[d.severity] = (sevDist[d.severity] || 0) + 1;
+    const catDist: Record<string, number> = {};
+    for (const d of issues) {
+      sevDist[d.severity] = (sevDist[d.severity] || 0) + 1;
+      catDist[d.category] = (catDist[d.category] || 0) + 1;
+    }
     return {
-      student_id: s.id, student_name: s.name,
+      student_id: s.id, student_name: s.name, email: s.email,
       total_diagnoses: diags.length, total_issues: issues.length,
       severity_distribution: sevDist, recurring_count: recurring.length,
       unique_pathologies: uniquePatterns.size,
+      category_distribution: catDist,
       risk_score: Math.min(1, issues.length * 0.06 + Math.random() * 0.2),
       top_pathology: diags[0]?.pathology_name || "-",
     };
@@ -197,25 +208,48 @@ export function getMockComparative(_courseId: number) {
 
 export function getMockPathologyDetail(_courseId: number, pathologyCode: string) {
   const allDiags = Object.values(studentDiagnoses).flat().filter((d) => d.pathology_code === pathologyCode);
-  const affected = new Map<number, { name: string; count: number }>();
+  const affected = new Map<number, { name: string; count: number; severities: string[]; first: string; last: string }>();
+  const sevDist: Record<string, number> = {};
+  const dateMap: Record<string, number> = {};
+
   for (const d of allDiags) {
     const s = MOCK_USERS.students.find((st) => st.id === d.student_id);
-    if (!affected.has(d.student_id)) affected.set(d.student_id, { name: s?.name || "?", count: 0 });
-    affected.get(d.student_id)!.count++;
+    if (!affected.has(d.student_id)) affected.set(d.student_id, { name: s?.name || "?", count: 0, severities: [], first: d.diagnosed_at, last: d.diagnosed_at });
+    const a = affected.get(d.student_id)!;
+    a.count++;
+    a.severities.push(d.severity);
+    if (d.diagnosed_at < a.first) a.first = d.diagnosed_at;
+    if (d.diagnosed_at > a.last) a.last = d.diagnosed_at;
+    sevDist[d.severity] = (sevDist[d.severity] || 0) + 1;
+    const date = d.diagnosed_at.slice(0, 10);
+    dateMap[date] = (dateMap[date] || 0) + 1;
   }
+
   const recurringCount = allDiags.filter((d) => d.is_recurring).length;
+  const category = allDiags[0]?.category || "";
   return {
     pathology_code: pathologyCode,
     pathology_name: allDiags[0]?.pathology_name || pathologyCode,
+    category,
+    root_cause: `${category} 영역의 기본 개념 이해가 부족할 수 있습니다.`,
+    prescription: `${allDiags[0]?.pathology_name || pathologyCode} 관련 연습 문제를 풀어보세요.`,
     affected_count: affected.size,
     total_occurrences: allDiags.length,
     recurrence_rate: allDiags.length > 0 ? recurringCount / allDiags.length : 0,
-    avg_per_student: affected.size > 0 ? allDiags.length / affected.size : 0,
+    avg_per_student: affected.size > 0 ? +(allDiags.length / affected.size).toFixed(1) : 0,
     first_seen: allDiags.sort((a, b) => a.diagnosed_at.localeCompare(b.diagnosed_at))[0]?.diagnosed_at || "",
     last_seen: allDiags.sort((a, b) => b.diagnosed_at.localeCompare(a.diagnosed_at))[0]?.diagnosed_at || "",
-    affected_students: Array.from(affected.entries()).map(([id, v]) => ({ student_id: id, student_name: v.name, occurrence_count: v.count })),
-    code_examples: allDiags.slice(0, 10).map((d) => ({ code_snippet: d.code_snippet, severity: d.severity, diagnosed_at: d.diagnosed_at })),
-    timeline: [],
+    severity_distribution: sevDist,
+    timeline: Object.entries(dateMap).sort().map(([date, count]) => ({ date, count })),
+    affected_students: Array.from(affected.entries()).map(([id, v]) => ({
+      student_id: id, student_name: v.name, occurrence_count: v.count,
+      severities: v.severities, first_seen: v.first, last_seen: v.last,
+    })),
+    code_examples: allDiags.slice(0, 10).map((d) => ({
+      student_id: d.student_id,
+      student_name: MOCK_USERS.students.find((s) => s.id === d.student_id)?.name || "?",
+      code: d.code_snippet, symptom: d.symptom, severity: d.severity, diagnosed_at: d.diagnosed_at,
+    })),
   };
 }
 

@@ -1,8 +1,8 @@
 import { useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useStore } from "../stores/useStore";
-import { useWebSocket } from "../hooks/useWebSocket";
-import { getCourseOverview, getCourseRisk } from "../services/api";
+import { getCourseOverview } from "../services/api";
+import { MOCK_USERS } from "../services/mockData";
 import HeartbeatMonitor from "../components/HeartbeatMonitor";
 import PathologyHeatmap from "../components/PathologyHeatmap";
 import EpidemiologyReport from "../components/EpidemiologyReport";
@@ -174,21 +174,34 @@ export default function InstructorDashboard() {
   const courseId = user?.course_id ?? 1;
   const navigate = useNavigate();
 
-  const handleMessage = useCallback(
-    (data: unknown) => {
-      const msg = data as { type: string; students?: StudentStatus[] };
-      if (msg.type === "heartbeat_update" && msg.students) {
-        setStudents(msg.students as StudentStatus[]);
-      }
-    },
-    [setStudents]
-  );
-
-  useWebSocket({ url: `/ws/dashboard/${courseId}`, onMessage: handleMessage, enabled: !!courseId });
-
+  // Mock 학생 상태 생성 (WebSocket 대신)
   useEffect(() => {
-    getCourseOverview(courseId).then((res) => setTotalStudents(res.data.student_count)).catch(() => {});
-  }, [courseId]);
+    const statuses: ("normal" | "stalled" | "danger")[] = ["normal", "normal", "stalled", "normal", "danger"];
+    const mockStudents = MOCK_USERS.students.map((s, i) => ({
+      id: s.id,
+      name: s.name,
+      status: statuses[i % statuses.length],
+      stall_min: statuses[i % statuses.length] === "danger" ? 8 : statuses[i % statuses.length] === "stalled" ? 3 : 0,
+      errors: statuses[i % statuses.length] === "danger" ? 7 : statuses[i % statuses.length] === "stalled" ? 2 : 0,
+    }));
+    setStudents(mockStudents);
+    setTotalStudents(mockStudents.length);
+  }, [setStudents]);
+
+  // 주기적으로 상태 변경 시뮬레이션
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const current = useStore.getState().students;
+      setStudents(current.map(s => {
+        const r = Math.random();
+        if (r < 0.1) return { ...s, status: "danger" as const, stall_min: s.stall_min + 1, errors: s.errors + 1 };
+        if (r < 0.2) return { ...s, status: "stalled" as const, stall_min: s.stall_min + 1 };
+        if (r < 0.4 && s.status !== "normal") return { ...s, status: "normal" as const, stall_min: 0 };
+        return s;
+      }));
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [setStudents]);
 
   const sc = {
     normal: students.filter((s) => s.status === "normal").length,
