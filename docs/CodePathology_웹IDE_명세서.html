@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CodePathology — 웹 IDE 버전 20라운드 개발명세서</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;600;700&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Noto Sans KR',sans-serif;background:#0a0a0f;color:#d1d5db;line-height:1.75;font-size:15px}
+  .w{max-width:1100px;margin:0 auto;padding:40px 24px}
+  h1{font-size:2.8rem;font-weight:900;text-align:center;margin:60px 0 10px;
+    background:linear-gradient(135deg,#818cf8,#c084fc,#f472b6);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .sub{text-align:center;color:#9ca3af;font-size:1.05rem;margin-bottom:60px}
+  h2{font-size:1.5rem;font-weight:900;color:#e0e7ff;margin:50px 0 8px;padding-top:30px;border-top:1px solid rgba(99,102,241,.15)}
+  h3{font-size:1.1rem;font-weight:700;color:#c4b5fd;margin:20px 0 8px}
+  h4{font-size:.92rem;font-weight:700;color:#a5b4fc;margin:14px 0 6px}
+  ul,ol{padding-left:20px;margin:6px 0}li{margin-bottom:3px;color:#b0b8c8}
+  code{font-family:'JetBrains Mono',monospace;background:rgba(99,102,241,.12);padding:2px 6px;border-radius:4px;font-size:13px;color:#c4b5fd}
+  pre{background:#12121f;border:1px solid rgba(99,102,241,.2);border-radius:10px;padding:18px;margin:12px 0;
+    font-family:'JetBrains Mono',monospace;font-size:12.5px;color:#a5b4fc;overflow-x:auto;line-height:1.7;white-space:pre-wrap}
+  .pb{background:#12121f;border:1px solid rgba(99,102,241,.25);border-radius:10px;padding:20px;margin:12px 0;
+    font-family:'JetBrains Mono',monospace;font-size:13px;color:#a5b4fc;white-space:pre-wrap;line-height:1.7}
+  .ob{background:rgba(52,211,153,.04);border:1px solid rgba(52,211,153,.2);border-radius:10px;padding:14px;margin:10px 0}
+  .ob h4{color:#6ee7b7;margin-top:0}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13px}
+  th{background:rgba(99,102,241,.1);color:#818cf8;padding:8px 10px;text-align:left;border-bottom:2px solid rgba(99,102,241,.2)}
+  td{padding:7px 10px;border-bottom:1px solid rgba(255,255,255,.04)}
+  .r{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:24px;margin:20px 0}
+  .rh{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+  .rn{min-width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1rem;flex-shrink:0}
+  .rt{font-size:1.15rem;font-weight:800;color:#e0e7ff}
+  .tg{display:inline-block;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700;margin-right:4px}
+  .be{background:rgba(99,102,241,.15);color:#818cf8}.fe{background:rgba(52,211,153,.15);color:#34d399}
+  .ai{background:rgba(236,72,153,.15);color:#f472b6}.db{background:rgba(168,85,247,.15);color:#a855f7}
+  .inf{background:rgba(59,130,246,.15);color:#3b82f6}
+  .toc{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:20px 24px;margin:30px 0}
+  .toc a{color:#818cf8;text-decoration:none;display:block;padding:3px 0;font-size:13px}.toc a:hover{color:#c4b5fd}
+  .dv{height:1px;background:linear-gradient(to right,transparent,rgba(99,102,241,.3),transparent);margin:40px 0}
+</style>
+</head>
+<body>
+<div class="w">
+<h1>CodePathology</h1>
+<p class="sub">웹 IDE 버전 · 20라운드 개발 프롬프트 & 기술명세서<br>
+<small style="color:#6b7280">KIT 바이브코딩 공모전 2026 · 브라우저에서 전부 동작 · URL 하나로 심사 가능</small></p>
+</div>
+</body>
+</html>
+
+<div class="w">
+
+<!-- 목차 -->
+<div class="toc">
+<h3 style="margin-top:0">📋 목차</h3>
+<strong style="color:#818cf8">Part A — 기술명세 (웹 IDE 버전)</strong>
+<a href="#a1">A1. 변경된 아키텍처</a>
+<a href="#a2">A2. 페이지 구조 & 라우팅</a>
+<a href="#a3">A3. DB 스키마</a>
+<a href="#a4">A4. API 명세</a>
+<a href="#a5">A5. WebSocket 프로토콜</a>
+<a href="#a6">A6. AI 프롬프트 설계</a>
+<a href="#a7">A7. Monaco Editor 연동 명세</a>
+<strong style="color:#f472b6;display:block;margin-top:10px">Part B — 20라운드 개발 프롬프트</strong>
+<a href="#r1">R1. 프로젝트 초기화</a> <a href="#r2">R2. DB 스키마</a> <a href="#r3">R3. FastAPI 코어</a>
+<a href="#r4">R4. 인증</a> <a href="#r5">R5. AST 파서</a> <a href="#r6">R6. AI 병리 진단</a>
+<a href="#r7">R7. 힌트 생성기</a> <a href="#r8">R8. RAG 커리큘럼</a> <a href="#r9">R9. 제출 & 진단 API</a>
+<a href="#r10">R10. 웹 IDE (Monaco)</a> <a href="#r11">R11. 실시간 심전도 수집</a> <a href="#r12">R12. WebSocket 통신</a>
+<a href="#r13">R13. 강사 대시보드 레이아웃</a> <a href="#r14">R14. 심전도 뷰</a> <a href="#r15">R15. 병리 히트맵</a>
+<a href="#r16">R16. 병리 카드</a> <a href="#r17">R17. 이탈 위험도</a> <a href="#r18">R18. 수강생 뷰</a>
+<a href="#r19">R19. Docker & 배포</a> <a href="#r20">R20. 시드 데이터 & 마무리</a>
+</div>
+
+<!-- ═══ PART A ═══ -->
+
+<h2 id="a1">A1. 변경된 아키텍처 (웹 IDE 버전)</h2>
+<p>VS Code Extension 제거. 모든 것이 브라우저에서 동작. URL 하나로 심사 가능.</p>
+<pre>
+┌──────────────────────────────────────────────────────────────────┐
+│                    React SPA (브라우저)                            │
+│                                                                  │
+│  /login          → 로그인                                        │
+│  /student        → Monaco 웹 IDE + AI 힌트 채팅 + 내 병리 카드     │
+│  /instructor     → 심전도 대시보드 + 히트맵 + 역학 리포트           │
+│                                                                  │
+│  ┌─────────────────────┐  ┌──────────────────────────────────┐   │
+│  │  Monaco Editor       │  │  AI 힌트 채팅 패널               │   │
+│  │  (코드 작성)          │  │  (소크라테스식 힌트)              │   │
+│  │  • 타이핑 이벤트 수집  │  │  • Level 1~4 단계별             │   │
+│  │  • 에러 감지          │  │  • "더 힌트" 버튼               │   │
+│  │  • 정체 시간 추적     │  │  • 병리 진단 결과 표시           │   │
+│  └─────────┬───────────┘  └──────────────┬───────────────────┘   │
+│            │ WebSocket                    │                       │
+└────────────┼──────────────────────────────┼───────────────────────┘
+             ▼                              ▼
+┌──────────────────────────────────────────────────────────────────┐
+│                    FastAPI 백엔드                                  │
+│                                                                  │
+│  REST API: 인증, 제출, 진단, 대시보드                               │
+│  WebSocket: 심전도 스트림, 힌트 푸시, 대시보드 브로드캐스트           │
+│                                                                  │
+│  ┌──────────┐ ┌───────────────┐ ┌──────────┐ ┌───────────────┐  │
+│  │Tree-sitter│ │GPT-4o/Claude  │ │LangChain │ │ 심전도 분석기  │  │
+│  │AST 파서   │ │병리 진단 엔진  │ │RAG 엔진  │ │ + 위험도 계산 │  │
+│  └──────────┘ └───────────────┘ └──────────┘ └───────────────┘  │
+│                                                                  │
+│  ┌──────────────┐  ┌───────────┐                                 │
+│  │ PostgreSQL 16 │  │ Redis 7   │                                 │
+│  │ (모든 데이터)  │  │ (실시간)   │                                 │
+│  └──────────────┘  └───────────┘                                 │
+└──────────────────────────────────────────────────────────────────┘
+</pre>
+
+<h3>VS Code Extension 대비 변경점</h3>
+<table>
+<tr><th>항목</th><th>이전 (Extension)</th><th>변경 (웹 IDE)</th></tr>
+<tr><td>코드 에디터</td><td>VS Code 로컬</td><td>Monaco Editor (브라우저 내장)</td></tr>
+<tr><td>타이핑 수집</td><td>Extension API</td><td>Monaco onDidChangeModelContent 이벤트</td></tr>
+<tr><td>에러 감지</td><td>VS Code Diagnostics</td><td>Monaco markers + 서버 컴파일 결과</td></tr>
+<tr><td>힌트 표시</td><td>Extension Webview</td><td>React 사이드 패널</td></tr>
+<tr><td>설치</td><td>.vsix 설치 필요</td><td>URL 접속만 하면 됨</td></tr>
+<tr><td>심사</td><td>심사위원 PC에 설치 필요</td><td>브라우저만 열면 됨 ✅</td></tr>
+</table>
+
+<h3>디렉토리 구조 (웹 IDE 버전)</h3>
+<pre>
+codepathology/
+├── backend/
+│   ├── app/
+│   │   ├── main.py
+│   │   ├── config.py
+│   │   ├── models/          # user, course, submission, diagnosis, heartbeat, risk_score
+│   │   ├── schemas/         # Pydantic 스키마
+│   │   ├── routers/         # auth, submissions, diagnoses, dashboard, websocket
+│   │   ├── services/
+│   │   │   ├── ast_parser.py
+│   │   │   ├── ai_diagnosis.py
+│   │   │   ├── hint_engine.py
+│   │   │   ├── rag_engine.py
+│   │   │   ├── heartbeat.py
+│   │   │   └── risk_scorer.py
+│   │   └── db/
+│   ├── seed.py
+│   ├── requirements.txt
+│   └── Dockerfile
+├── frontend/
+│   ├── src/
+│   │   ├── App.tsx
+│   │   ├── pages/
+│   │   │   ├── Login.tsx
+│   │   │   ├── StudentIDE.tsx          # Monaco 웹 IDE + 힌트 채팅
+│   │   │   └── InstructorDashboard.tsx
+│   │   ├── components/
+│   │   │   ├── MonacoEditor.tsx        # Monaco 에디터 래퍼
+│   │   │   ├── HintChat.tsx            # AI 힌트 채팅 패널
+│   │   │   ├── HeartbeatMonitor.tsx
+│   │   │   ├── PathologyHeatmap.tsx
+│   │   │   ├── PathologyCard.tsx
+│   │   │   ├── RiskScore.tsx
+│   │   │   ├── EpidemiologyReport.tsx
+│   │   │   └── StudentGrowthChart.tsx
+│   │   ├── hooks/
+│   │   │   ├── useWebSocket.ts
+│   │   │   └── useHeartbeat.ts         # Monaco 이벤트 → 심전도 수집
+│   │   ├── stores/
+│   │   │   └── useStore.ts             # zustand
+│   │   └── services/
+│   │       └── api.ts
+│   ├── package.json
+│   └── Dockerfile
+├── docker-compose.yml
+├── README.md
+└── .github/workflows/deploy.yml
+</pre>
+
+<h2 id="a2">A2. 페이지 구조 & 라우팅</h2>
+<table>
+<tr><th>경로</th><th>역할</th><th>접근 권한</th><th>핵심 컴포넌트</th></tr>
+<tr><td><code>/login</code></td><td>로그인</td><td>모두</td><td>이메일/비밀번호 폼</td></tr>
+<tr><td><code>/student</code></td><td>수강생 웹 IDE</td><td>student</td><td>Monaco Editor + HintChat + 내 병리 카드 + 성장 그래프</td></tr>
+<tr><td><code>/instructor</code></td><td>강사 대시보드</td><td>instructor</td><td>HeartbeatMonitor + PathologyHeatmap + EpidemiologyReport + PathologyCard + RiskScore</td></tr>
+</table>
+
+<h3>수강생 IDE 페이지 레이아웃</h3>
+<pre>
+┌─────────────────────────────────────────────────────────────┐
+│  상단바: 이름 · 과정명 · 이번 주 주제 · 상태(🟢/🟡/🔴)       │
+├──────────────────────────────┬──────────────────────────────┤
+│                              │                              │
+│   Monaco Editor              │   AI 힌트 채팅               │
+│   (좌측 70%)                 │   (우측 30%)                 │
+│                              │                              │
+│   • Java/Python/JS 선택      │   💬 AI: "배열의 마지막       │
+│   • 실시간 에러 표시          │      인덱스가 몇인지          │
+│   • 줄 번호 + 미니맵         │      확인해보세요"            │
+│   • 코드 제출 버튼            │   [더 힌트] [제출하기]        │
+│                              │                              │
+├──────────────────────────────┴──────────────────────────────┤
+│  하단 탭: [내 병리 카드] [성장 그래프] [이번 주 처방 과제]      │
+│  • 현재 활성 병리 목록 · 주차별 추이 · 마이크로 실습           │
+└─────────────────────────────────────────────────────────────┘
+</pre>
+
+<h2 id="a3">A3. DB 스키마</h2>
+<p>이전 명세서와 동일 (6개 테이블). vscode-extension 관련 없으므로 변경 없음.</p>
+<pre>
+users          — 사용자 (student/instructor/admin)
+courses        — 과정/반
+submissions    — 코드 제출
+diagnoses      — 병리 진단
+heartbeat_events — 심전도 이벤트 (이제 Monaco에서 수집)
+risk_scores    — 이탈 위험도
+</pre>
+
+<h2 id="a4">A4. API 명세</h2>
+<p>이전과 동일. Extension 전용 엔드포인트 없음. 모든 통신이 REST + WebSocket.</p>
+<table>
+<tr><th>구분</th><th>Method</th><th>Endpoint</th><th>설명</th></tr>
+<tr><td rowspan="3">인증</td><td>POST</td><td><code>/api/auth/register</code></td><td>회원가입</td></tr>
+<tr><td>POST</td><td><code>/api/auth/login</code></td><td>로그인 → JWT</td></tr>
+<tr><td>GET</td><td><code>/api/auth/me</code></td><td>현재 사용자</td></tr>
+<tr><td rowspan="2">제출</td><td>POST</td><td><code>/api/submissions</code></td><td>코드 제출 → AI 진단</td></tr>
+<tr><td>GET</td><td><code>/api/submissions/{id}</code></td><td>제출 상세</td></tr>
+<tr><td rowspan="3">진단</td><td>GET</td><td><code>/api/diagnoses/student/{id}</code></td><td>수강생 병리 이력</td></tr>
+<tr><td>GET</td><td><code>/api/diagnoses/course/{id}/heatmap</code></td><td>반 전체 히트맵</td></tr>
+<tr><td>GET</td><td><code>/api/diagnoses/course/{id}/epidemiology</code></td><td>역학 리포트</td></tr>
+<tr><td rowspan="3">대시보드</td><td>GET</td><td><code>/api/dashboard/course/{id}/overview</code></td><td>반 요약</td></tr>
+<tr><td>GET</td><td><code>/api/dashboard/student/{id}/card</code></td><td>병리 카드</td></tr>
+<tr><td>GET</td><td><code>/api/risk/course/{id}</code></td><td>이탈 위험도</td></tr>
+<tr><td>커리큘럼</td><td>POST</td><td><code>/api/courses/{id}/curriculum</code></td><td>커리큘럼 업로드</td></tr>
+<tr><td rowspan="3">WebSocket</td><td>WS</td><td><code>/ws/heartbeat/{student_id}</code></td><td>Monaco → 서버: 심전도</td></tr>
+<tr><td>WS</td><td><code>/ws/dashboard/{course_id}</code></td><td>서버 → 강사: 브로드캐스트</td></tr>
+<tr><td>WS</td><td><code>/ws/hints/{student_id}</code></td><td>서버 → 수강생: 힌트 푸시</td></tr>
+</table>
+
+<h2 id="a5">A5. WebSocket 프로토콜</h2>
+<pre>
+// Monaco → 서버 (심전도)
+{ "type": "heartbeat", "event": "typing", "data": { "chars_per_min": 45, "delete_ratio": 0.12 } }
+{ "type": "heartbeat", "event": "pause", "data": { "duration_sec": 180, "last_line": 15 } }
+{ "type": "heartbeat", "event": "error", "data": { "message": "';' expected", "line": 8 } }
+
+// Monaco → 서버 (코드 제출)
+{ "type": "submit_code", "code": "public class Main { ... }", "language": "java" }
+
+// 서버 → 수강생 (AI 힌트)
+{ "type": "hint", "hint_level": 2, "message": "배열의 마지막 인덱스가 몇인지 확인해보세요.", "related_line": 5 }
+
+// 서버 → 수강생 (진단 결과)
+{ "type": "diagnosis", "pathology_name": "경계값 사고 미형성", "severity": "high", "symptom": "...", "prescription": "..." }
+
+// 서버 → 강사 대시보드 (2초 간격)
+{ "type": "heartbeat_update", "students": [
+    { "id": 42, "name": "김철수", "status": "danger", "stall_min": 12, "errors": 5 },
+    { "id": 43, "name": "이영희", "status": "normal", "stall_min": 0, "errors": 0 }
+]}
+</pre>
+
+<h2 id="a6">A6. AI 프롬프트 설계</h2>
+<p>이전 명세서 A4와 동일. 병리 진단 프롬프트 + 소크라테스식 힌트 프롬프트.</p>
+
+<h2 id="a7">A7. Monaco Editor 연동 명세</h2>
+<h3>Monaco 이벤트 → 심전도 수집</h3>
+<table>
+<tr><th>Monaco 이벤트</th><th>매핑</th><th>수집 데이터</th><th>전송</th></tr>
+<tr><td><code>onDidChangeModelContent</code></td><td>typing</td><td>분당 글자 수, 삭제 비율</td><td>10초 집계</td></tr>
+<tr><td>타이머 (입력 없음 30초+)</td><td>pause</td><td>정체 시간, 마지막 줄</td><td>즉시</td></tr>
+<tr><td><code>onDidChangeMarkers</code></td><td>error</td><td>에러 메시지, 줄 번호</td><td>즉시</td></tr>
+<tr><td>언어 변경 드롭다운</td><td>lang_change</td><td>선택된 언어</td><td>즉시</td></tr>
+</table>
+
+<h3>Monaco 설정</h3>
+<pre>
+// MonacoEditor.tsx 핵심 설정
+&lt;Editor
+  height="100%"
+  language={selectedLanguage}  // "java" | "python" | "javascript"
+  theme="vs-dark"
+  options={{
+    fontSize: 14,
+    minimap: { enabled: true },
+    automaticLayout: true,
+    scrollBeyondLastLine: false,
+    lineNumbers: "on",
+    renderWhitespace: "selection",
+    tabSize: 4,
+  }}
+  onChange={handleCodeChange}       // → 심전도 수집
+  onValidate={handleValidation}    // → 에러 감지
+/&gt;
+</pre>
+</div>
+
+<div class="w">
+<div class="dv"></div>
+<h2 style="border-top:3px solid rgba(236,72,153,.3);padding-top:40px;margin-top:20px;font-size:1.8rem;
+  background:linear-gradient(135deg,#f472b6,#818cf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent">
+  Part B — 20라운드 개발 프롬프트 (웹 IDE 버전)</h2>
+<p style="color:#9ca3af;margin-bottom:20px">순서대로 AI에게 입력하면 MVP 완성. Extension 관련 전부 제거, Monaco 웹 IDE로 대체.</p>
+
+<!-- R1 -->
+<div class="r" id="r1"><div class="rh"><div class="rn" style="background:rgba(99,102,241,.2);color:#818cf8">1</div>
+<div><div class="rt">프로젝트 초기화</div><span class="tg inf">인프라</span></div></div>
+<div class="pb">CodePathology 프로젝트를 초기화해줘. VS Code Extension 없이 웹 앱으로만 구성.
+
+구조:
+codepathology/
+├── backend/ (Python FastAPI)
+├── frontend/ (React + TypeScript + Vite)
+├── docker-compose.yml (PostgreSQL 16 + Redis 7 + backend + frontend)
+
+backend/requirements.txt:
+fastapi, uvicorn[standard], sqlalchemy[asyncio], asyncpg, alembic, pydantic[email],
+python-jose[cryptography], passlib[bcrypt], httpx, openai, langchain, langchain-openai,
+faiss-cpu, tree-sitter, py-tree-sitter-languages, redis, python-dotenv, websockets
+
+frontend/package.json:
+react 18, typescript, vite, react-router-dom 6, @monaco-editor/react,
+recharts, d3, axios, zustand, tailwindcss, @headlessui/react
+
+docker-compose.yml:
+- postgres:16 (port 5432, POSTGRES_DB=codepathology)
+- redis:7 (port 6379)
+- backend (port 8000, depends_on postgres+redis)
+- frontend (port 3000)
+
+.env.example:
+DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/codepathology
+REDIS_URL=redis://localhost:6379
+OPENAI_API_KEY=sk-xxx
+JWT_SECRET=your-secret-key
+CORS_ORIGINS=http://localhost:3000</div>
+<div class="ob"><h4>✅ 산출물</h4><ul><li>전체 디렉토리 구조</li><li>docker-compose.yml</li><li>requirements.txt + package.json</li><li>.env.example</li></ul></div></div>
+
+<!-- R2 -->
+<div class="r" id="r2"><div class="rh"><div class="rn" style="background:rgba(168,85,247,.2);color:#a855f7">2</div>
+<div><div class="rt">DB 스키마 & 마이그레이션</div><span class="tg db">DB</span></div></div>
+<div class="pb">SQLAlchemy async 모델 + Alembic 마이그레이션을 만들어줘.
+
+6개 테이블:
+1. users (id SERIAL PK, email UNIQUE, name, password_hash, role CHECK(student/instructor/admin), course_id FK→courses, created_at TIMESTAMPTZ)
+2. courses (id SERIAL PK, name, language, instructor_id FK→users, start_date DATE, end_date DATE, curriculum JSONB)
+3. submissions (id SERIAL PK, student_id FK, course_id FK, code TEXT, language, file_name, ast_json JSONB, submitted_at TIMESTAMPTZ)
+4. diagnoses (id SERIAL PK, submission_id FK, student_id FK, pathology_name, pathology_code, category, severity CHECK(low/medium/high/critical), symptom TEXT, root_cause TEXT, prescription TEXT, hint_given TEXT, is_recurring BOOL DEFAULT FALSE, recurrence_count INT DEFAULT 1, code_snippet TEXT, diagnosed_at TIMESTAMPTZ)
+5. heartbeat_events (id SERIAL PK, student_id FK, course_id FK, event_type, data JSONB, status CHECK(normal/stalled/danger), recorded_at TIMESTAMPTZ)
+6. risk_scores (id SERIAL PK, student_id FK, course_id FK, score FLOAT, factors JSONB, calculated_at TIMESTAMPTZ)
+
+backend/app/models/ 에 각 파일. db/database.py에 async engine (asyncpg).
+Alembic init + 첫 마이그레이션.</div>
+<div class="ob"><h4>✅ 산출물</h4><ul><li>models/ 6개 파일</li><li>database.py</li><li>alembic 설정 + 마이그레이션</li></ul></div></div>
+
+<!-- R3 -->
+<div class="r" id="r3"><div class="rh"><div class="rn" style="background:rgba(99,102,241,.2);color:#818cf8">3</div>
+<div><div class="rt">FastAPI 서버 코어</div><span class="tg be">백엔드</span></div></div>
+<div class="pb">FastAPI 메인 앱을 구성해줘.
+
+main.py: CORS 미들웨어(CORS_ORIGINS), 라우터 등록(auth, submissions, diagnoses, dashboard, websocket), startup에서 DB+Redis 연결, shutdown에서 정리.
+config.py: pydantic BaseSettings (DATABASE_URL, REDIS_URL, OPENAI_API_KEY, JWT_SECRET, JWT_EXPIRE_MINUTES=1440, CORS_ORIGINS)
+각 라우터 파일은 빈 껍데기로 생성 (routers/auth.py, submissions.py, diagnoses.py, dashboard.py, websocket.py)
+schemas/ 빈 껍데기 (user.py, submission.py, diagnosis.py, heartbeat.py)</div>
+<div class="ob"><h4>✅ 산출물</h4><ul><li>main.py, config.py</li><li>routers/ 5개</li><li>schemas/ 4개</li></ul></div></div>
+
+<!-- R4 -->
+<div class="r" id="r4"><div class="rh"><div class="rn" style="background:rgba(52,211,153,.2);color:#34d399">4</div>
+<div><div class="rt">인증 & 사용자 관리</div><span class="tg be">백엔드</span></div></div>
+<div class="pb">JWT 인증 구현.
+
+routers/auth.py:
+- POST /api/auth/register (bcrypt 해싱, role 검증)
+- POST /api/auth/login → JWT 발급 (HS256, python-jose)
+- GET /api/auth/me → 현재 사용자 (토큰 검증)
+
+services/auth.py: create_access_token, verify_token, get_current_user (FastAPI Depends)
+schemas/user.py: UserCreate, UserLogin, UserResponse, TokenResponse</div>
+<div class="ob"><h4>✅ 산출물</h4><ul><li>인증 3 엔드포인트</li><li>JWT 유틸</li></ul><h4>🧪 검증</h4><p>register → login → /me 성공</p></div></div>
+
+<!-- R5 -->
+<div class="r" id="r5"><div class="rh"><div class="rn" style="background:rgba(236,72,153,.2);color:#f472b6">5</div>
+<div><div class="rt">Tree-sitter AST 파서</div><span class="tg ai">AI</span></div></div>
+<div class="pb">Tree-sitter 코드 분석 서비스.
+
+services/ast_parser.py:
+- parse_code(code: str, language: str) → dict
+  - Java/Python/JS 지원 (py-tree-sitter-languages 사용)
+  - 반환: {functions, classes, loops, variables, error_prone_patterns, complexity_score}
+- detect_patterns(ast_result: dict) → list[dict]
+  - off-by-one, 무한루프 위험, null 체크 누락, 미사용 변수 감지
+  - 각 패턴: {pattern_name, line, description, severity}
+
+파싱 실패 시 graceful fallback (빈 AST + raw code 반환).</div>
+<div class="ob"><h4>✅ 산출물</h4><ul><li>ast_parser.py (3개 언어)</li></ul><h4>🧪 검증</h4><p>Java for문 → off-by-one 감지</p></div></div>
+
+<!-- R6 -->
+<div class="r" id="r6"><div class="rh"><div class="rn" style="background:rgba(236,72,153,.2);color:#f472b6">6</div>
+<div><div class="rt">AI 병리 진단 엔진</div><span class="tg ai">AI</span></div></div>
+<div class="pb">GPT-4o 병리 진단 서비스.
+
+services/ai_diagnosis.py:
+- async diagnose_code(code, language, ast_result, student_history, curriculum_context) → DiagnosisResult
+
+시스템 프롬프트:
+"""당신은 "코드 병리학자(Code Pathologist)"입니다.
+수강생이 제출한 코드를 분석하되, "어디가 틀렸는지"가 아니라 "이 수강생의 사고 패턴에 어떤 구조적 결함이 있는지"를 진단하세요.
+
+JSON 형식으로 반환:
+{
+  "pathology_name": "한국어 병리명",
+  "pathology_code": "ENGLISH_CODE",
+  "category": "관련 개념",
+  "severity": "low|medium|high|critical",
+  "symptom": "코드에서 관찰되는 증상 (줄 번호 포함)",
+  "root_cause": "근본적 사고 결함",
+  "prescription": "처방 (마이크로 실습 2~3개 포함)",
+  "meta_insight": "수강생이 자기 사고 패턴을 인식할 메타인지 메시지"
+}
+병리 없으면 {"pathology_name":"정상","severity":"none"}"""
+
+- check_recurrence(student_id, pathology_code) → (bool, int)
+- OpenAI: model="gpt-4o", temperature=0.3, response_format=json_object, timeout=30s, 3회 재시도</div>
+<div class="ob"><h4>✅ 산출물</h4><ul><li>ai_diagnosis.py</li><li>schemas/diagnosis.py (DiagnosisResult)</li></ul></div></div>
+
+<!-- R7 -->
+<div class="r" id="r7"><div class="rh"><div class="rn" style="background:rgba(251,191,36,.2);color:#fbbf24">7</div>
+<div><div class="rt">소크라테스식 힌트 생성기</div><span class="tg ai">AI</span></div></div>
+<div class="pb">힌트 생성 서비스.
+
+services/hint_engine.py:
+- async generate_hint(code, error_msg, language, hint_level, student_context) → {message, hint_level, related_line}
+
+시스템 프롬프트:
+"""코딩 교육 튜터. 절대 답을 직접 주지 마세요. 소크라테스식 질문으로 유도.
+Level 1: 넓은 방향 ("어떤 부분을 다시 확인해볼까요?")
+Level 2: 개념 상기 ("배열 인덱스는 몇부터 시작하죠?")
+Level 3: 유사 예시 (더 간단한 예시 보여주고 비교)
+Level 4: 부분 코드 (핵심만 빈칸으로)
+이번 주 배운 범위 안에서만. 한국어 2~3문장."""
+
+- should_auto_hint(stall_sec, error_count) → (bool, int)
+  - 5분+에러2회→L1, 10분+에러3회→L2, 15분+→L3+강사알림</div>
+<div class="ob"><h4>✅ 산출물</h4><ul><li>hint_engine.py</li><li>4단계 힌트 + 자동 트리거</li></ul></div></div>
+
+<!-- R8 -->
+<div class="r" id="r8"><div class="rh"><div class="rn" style="background:rgba(99,102,241,.2);color:#818cf8">8</div>
+<div><div class="rt">RAG 커리큘럼 연동</div><span class="tg ai">AI</span></div></div>
+<div class="pb">LangChain + FAISS RAG.
+
+services/rag_engine.py:
+- index_curriculum(course_id, documents: [{week_number, title, content}])
+  → OpenAI text-embedding-3-small → FAISS 인덱스 저장
+- get_curriculum_context(course_id, code, error_msg) → str (top-3 관련 문서)
+- POST /api/courses/{id}/curriculum 엔드포인트
+
+샘플 Java 풀스택 커리큘럼 6주:
+W1: 변수·자료형·연산자
+W2: 조건문 (if/switch)
+W3: 반복문 (for/while/do-while) + 배열
+W4: 메서드 + 클래스 기초
+W5: 상속·다형성·인터페이스
+W6: 예외처리 + 컬렉션 (ArrayList, HashMap)</div>
+<div class="ob"><h4>✅ 산출물</h4><ul><li>rag_engine.py</li><li>커리큘럼 업로드 API</li><li>샘플 6주 데이터</li></ul></div></div>
+
+<!-- R9 -->
+<div class="r" id="r9"><div class="rh"><div class="rn" style="background:rgba(52,211,153,.2);color:#34d399">9</div>
+<div><div class="rt">코드 제출 & 진단 API 통합</div><span class="tg be">백엔드</span></div></div>
+<div class="pb">전체 진단 파이프라인 완성.
+
+routers/submissions.py:
+- POST /api/submissions (student 인증)
+  1. submissions 저장
+  2. ast_parser.parse_code()
+  3. rag_engine.get_curriculum_context()
+  4. ai_diagnosis.diagnose_code()
+  5. diagnoses 저장 (반복 체크 포함)
+  6. 응답: {submission_id, diagnosis}
+- GET /api/submissions/{id}
+
+routers/diagnoses.py:
+- GET /api/diagnoses/student/{id} (페이지네이션)
+- GET /api/diagnoses/course/{id}/heatmap → [{pathology_code, name, count, percentage}]
+- GET /api/diagnoses/course/{id}/epidemiology → {top_pathologies, trend, recommendation}</div>
+<div class="ob"><h4>✅ 산출물</h4><ul><li>제출 파이프라인 (5단계)</li><li>진단 조회 API 3개</li></ul><h4>🧪 검증</h4><p>Java 코드 POST → 3초 내 진단 반환</p></div></div>
+
+<!-- R10 — 핵심 변경: Monaco 웹 IDE -->
+<div class="r" id="r10" style="border-color:rgba(236,72,153,.3)">
+<div class="rh"><div class="rn" style="background:rgba(236,72,153,.3);color:#f472b6">10</div>
+<div><div class="rt">⭐ 웹 IDE — Monaco Editor 통합</div><span class="tg fe">프론트</span><span class="tg ai">핵심</span></div></div>
+<div class="pb">수강생용 웹 IDE 페이지를 만들어줘. @monaco-editor/react 사용.
+
+pages/StudentIDE.tsx:
+- 좌측 70%: Monaco Editor
+  - 언어 선택 드롭다운 (Java/Python/JavaScript)
+  - vs-dark 테마, fontSize 14, minimap, lineNumbers
+  - 하단에 "🔬 진단 제출" 버튼 (POST /api/submissions)
+- 우측 30%: AI 힌트 채팅 패널 (components/HintChat.tsx)
+  - 채팅 형태 UI (AI 메시지 + 수강생 "더 힌트" 버튼)
+  - WebSocket /ws/hints/{studentId}로 실시간 힌트 수신
+  - 진단 결과도 여기에 카드 형태로 표시 (병리명, severity 뱃지, 처방)
+- 하단 탭 영역: [내 병리 카드] [성장 그래프] [처방 과제] (R18에서 구현)
+
+components/MonacoEditor.tsx:
+- @monaco-editor/react의 Editor 래퍼
+- onChange → useHeartbeat 훅으로 타이핑 데이터 수집
+- onValidate → 에러 감지 → WebSocket 전송
+
+components/HintChat.tsx:
+- 채팅 메시지 리스트 (AI 힌트 + 진단 결과)
+- "더 힌트" 버튼 → hint_level 증가 → 서버에 요청
+- 진단 결과 카드: 병리명, severity 색상 뱃지, 증상, 처방 접기/펼치기
+
+hooks/useHeartbeat.ts:
+- Monaco onChange 이벤트 → 10초 집계 → WebSocket 전송
+- 30초 입력 없음 → pause 이벤트
+- onValidate 에러 → error 이벤트
+- 상태바에 현재 상태 표시 (🟢/🟡/🔴)</div>
+<div class="ob"><h4>✅ 산출물</h4><ul><li>StudentIDE.tsx (메인 페이지)</li><li>MonacoEditor.tsx (에디터 래퍼)</li><li>HintChat.tsx (힌트 채팅)</li><li>useHeartbeat.ts (심전도 수집 훅)</li></ul><h4>🧪 검증</h4><p>브라우저에서 코드 작성 → 제출 → 진단 결과 + 힌트 표시</p></div></div>
+</div>
+
+<div class="w">
+
+<!-- R11 -->
+<div class="r" id="r11"><div class="rh"><div class="rn" style="background:rgba(236,72,153,.2);color:#f472b6">11</div>
+<div><div class="rt">실시간 심전도 수집 (Monaco 기반)</div><span class="tg fe">프론트</span><span class="tg be">백엔드</span></div></div>
+<div class="pb">Monaco 이벤트 기반 심전도 수집 + 서버 처리.
+
+hooks/useHeartbeat.ts 완성:
+- onDidChangeModelContent → 10초마다 {chars_per_min, delete_ratio} 집계 → WS 전송
+- 30초 입력 없음 타이머 → {event:"pause", duration_sec, last_line} → WS 전송
+- onDidChangeMarkers → {event:"error", message, line} → WS 전송
+- 현재 상태(normal/stalled/danger)를 zustand 스토어에 저장 → 상단바에 표시
+
+backend routers/websocket.py:
+- /ws/heartbeat/{student_id}: 수신 이벤트 → Redis 저장 (키: hb:{student_id}, TTL 5분)
+- services/heartbeat.py:
+  - analyze_status(events) → "normal"|"stalled"|"danger"
+    - normal: 타이핑 활발 + 에러 적음
+    - stalled: 5분+ 정체 OR 에러 3회+
+    - danger: 10분+ 정체 + 에러 5회+
+  - should_auto_hint(stall_sec, error_count) 트리거 시 → hint_engine 호출 → /ws/hints로 푸시
+- 5분마다 heartbeat_events 테이블에 배치 저장</div>
+<div class="ob"><h4>✅ 산출물</h4><ul><li>useHeartbeat.ts 완성</li><li>WS heartbeat 엔드포인트</li><li>heartbeat.py 상태 분석</li><li>자동 힌트 트리거</li></ul></div></div>
+
+<!-- R12 -->
+<div class="r" id="r12"><div class="rh"><div class="rn" style="background:rgba(99,102,241,.2);color:#818cf8">12</div>
+<div><div class="rt">WebSocket 통신 완성</div><span class="tg be">백엔드</span><span class="tg fe">프론트</span></div></div>
+<div class="pb">3개 WebSocket 엔드포인트 완성.
+
+1. /ws/heartbeat/{student_id} (R11에서 생성) — 양방향
+2. /ws/dashboard/{course_id} — 서버→강사: 2초마다 반 전체 심전도 브로드캐스트
+   - Redis에서 해당 course 모든 학생 상태 조회
+   - {type:"heartbeat_update", students:[{id,name,status,stall_min,errors}]}
+3. /ws/hints/{student_id} — 서버→수강생: AI 힌트 + 진단 결과 푸시
+
+hooks/useWebSocket.ts:
+- 범용 WebSocket 훅 (URL, onMessage, 자동 재연결 3회, ping/pong 30초)
+- 강사 대시보드용: /ws/dashboard/{courseId} 연결 → zustand 업데이트
+- 수강생용: /ws/hints/{studentId} 연결 → HintChat에 메시지 추가
+
+ConnectionManager 클래스 (백엔드):
+- 학생별, 과정별 WebSocket 연결 관리
+- broadcast_to_course(course_id, data) 메서드</div>
+<div class="ob"><h4>✅ 산출물</h4><ul><li>3개 WS 엔드포인트</li><li>useWebSocket.ts</li><li>ConnectionManager</li><li>2초 브로드캐스트</li></ul></div></div>
+
+<!-- R13 -->
+<div class="r" id="r13"><div class="rh"><div class="rn" style="background:rgba(52,211,153,.2);color:#34d399">13</div>
+<div><div class="rt">강사 대시보드 레이아웃</div><span class="tg fe">프론트</span></div></div>
+<div class="pb">강사 대시보드 기본 레이아웃.
+
+pages/InstructorDashboard.tsx:
+- 상단: 과정명 + 접속 수강생 수 + 🟢N 🟡N 🔴N 요약
+- 좌측 사이드바: [실시간 심전도] [병리 히트맵] [역학 리포트] [수강생 목록] [이탈 위험도]
+- 메인: 선택 메뉴에 따라 컴포넌트 전환
+- WebSocket /ws/dashboard/{courseId} 연결
+
+pages/Login.tsx:
+- 이메일/비밀번호 폼 → POST /api/auth/login → JWT zustand 저장
+- role에 따라 /student 또는 /instructor로 리다이렉트
+
+App.tsx:
+- react-router-dom: /login, /student (ProtectedRoute student), /instructor (ProtectedRoute instructor)
+
+services/api.ts:
+- axios 인스턴스 (baseURL, JWT 인터셉터)
+- 모든 API 함수
+
+다크 테마 (#0a0a1a), Tailwind CSS, 보라/핑크 액센트.</div>
+<div class="ob"><h4>✅ 산출물</h4><ul><li>InstructorDashboard.tsx</li><li>Login.tsx + App.tsx 라우팅</li><li>api.ts</li><li>ProtectedRoute</li></ul></div></div>
+
+<!-- R14 -->
+<div class="r" id="r14"><div class="rh"><div class="rn" style="background:rgba(236,72,153,.2);color:#f472b6">14</div>
+<div><div class="rt">실시간 심전도 뷰</div><span class="tg fe">프론트</span></div></div>
+<div class="pb">HeartbeatMonitor.tsx:
+- WebSocket 데이터로 수강생 그리드 표시
+- 각 카드: 이름, 🟢/🟡/🔴, 정체 시간(분), 에러 수, 마지막 활동
+- 위험 수강생 자동 상단 정렬 (트리아지)
+- 🔴 발생 시 브라우저 Notification API 알림
+- 카드 클릭 → 해당 수강생 병리 카드로 이동
+- 2초 자동 업데이트, 상태 변경 시 테두리 색상 애니메이션
+- 반응형 (모바일 대응)</div>
+<div class="ob"><h4>✅ 산출물</h4><ul><li>HeartbeatMonitor.tsx</li><li>트리아지 + 알림 + 애니메이션</li></ul></div></div>
+
+<!-- R15 -->
+<div class="r" id="r15"><div class="rh"><div class="rn" style="background:rgba(168,85,247,.2);color:#a855f7">15</div>
+<div><div class="rt">병리 히트맵 & 역학 리포트</div><span class="tg fe">프론트</span></div></div>
+<div class="pb">PathologyHeatmap.tsx:
+- GET /api/diagnoses/course/{id}/heatmap
+- D3.js 히트맵: X=수강생, Y=병리 카테고리, 색상=severity
+- 호버 툴팁: 수강생명, 병리명, 횟수, 최근일
+- 필터: 주차별, severity별
+
+EpidemiologyReport.tsx:
+- GET /api/diagnoses/course/{id}/epidemiology
+- Top 5 병리 (프로그레스 바 + 퍼센트)
+- 지난 주 대비 ↑↓ 변화
+- AI 추천: "다음 수업에서 OO 집중 보충 권장"
+- Recharts 막대/꺾은선 그래프</div>
+<div class="ob"><h4>✅ 산출물</h4><ul><li>PathologyHeatmap.tsx</li><li>EpidemiologyReport.tsx</li></ul></div></div>
+
+<!-- R16 -->
+<div class="r" id="r16"><div class="rh"><div class="rn" style="background:rgba(52,211,153,.2);color:#34d399">16</div>
+<div><div class="rt">수강생별 병리 카드</div><span class="tg fe">프론트</span></div></div>
+<div class="pb">PathologyCard.tsx:
+- GET /api/dashboard/student/{id}/card
+- 상단: 이름, 과정, 상태, 이탈 위험도
+- 병리 이력 타임라인 (날짜순, severity 뱃지, 반복 태그)
+- 클릭 펼침: 근본 원인, 처방, 힌트, 코드 스니펫
+- 카테고리별 도넛 차트 (Recharts)
+- severity 분포 스택 바
+- 3회+ 반복 병리 빨간 하이라이트
+- 강사 메모 텍스트 영역</div>
+<div class="ob"><h4>✅ 산출물</h4><ul><li>PathologyCard.tsx</li><li>타임라인 + 차트 + 메모</li></ul></div></div>
+
+<!-- R17 -->
+<div class="r" id="r17"><div class="rh"><div class="rn" style="background:rgba(239,68,68,.2);color:#f87171">17</div>
+<div><div class="rt">이탈 위험도 스코어링</div><span class="tg be">백엔드</span><span class="tg fe">프론트</span></div></div>
+<div class="pb">services/risk_scorer.py:
+- calculate_risk(student_id, course_id) → {score: 0.0~1.0, factors: dict}
+  피처 6개:
+  1. 최근 7일 danger 비율
+  2. 에러 빈도 추이 (증가/감소)
+  3. 코드 제출 간격 변화
+  4. 반복 병리 개수
+  5. critical 진단 횟수
+  6. 최근 3일 활동 시간
+  가중 평균 → 스코어
+- batch_calculate(course_id) → 반 전체 일괄
+
+GET /api/risk/course/{id} → 스코어 내림차순
+
+RiskScore.tsx:
+- 수강생 리스트 (스코어 바)
+- 0.7+: 🔴 "즉시 상담 권장"
+- 0.4~0.7: 🟡 주의
+- 클릭 → 위험 요인 상세</div>
+<div class="ob"><h4>✅ 산출물</h4><ul><li>risk_scorer.py</li><li>RiskScore.tsx</li></ul></div></div>
+
+<!-- R18 -->
+<div class="r" id="r18"><div class="rh"><div class="rn" style="background:rgba(99,102,241,.2);color:#818cf8">18</div>
+<div><div class="rt">수강생 뷰 완성 (하단 탭)</div><span class="tg fe">프론트</span></div></div>
+<div class="pb">StudentIDE.tsx 하단 탭 영역 완성.
+
+탭 1 — 내 병리 카드:
+- 현재 활성 병리 (severity 순)
+- 메타인지 메시지 ("당신은 경계값 설정 시 범위를 1 초과하는 경향이 있습니다")
+- 처방 실습 링크
+
+탭 2 — 성장 그래프 (StudentGrowthChart.tsx):
+- 주차별 병리 발생 추이 (Recharts 꺾은선)
+- 해결된 vs 활성 병리
+- 동기부여: "지난 주 대비 경계값 에러 40% 감소 🎉"
+
+탭 3 — 이번 주 처방 과제:
+- AI 생성 마이크로 실습 문제 목록
+- 완료 체크박스
+- 완료율 프로그레스 바</div>
+<div class="ob"><h4>✅ 산출물</h4><ul><li>하단 3개 탭 완성</li><li>StudentGrowthChart.tsx</li><li>처방 과제 UI</li></ul></div></div>
+
+<!-- R19 -->
+<div class="r" id="r19"><div class="rh"><div class="rn" style="background:rgba(59,130,246,.2);color:#3b82f6">19</div>
+<div><div class="rt">Docker & 배포</div><span class="tg inf">인프라</span></div></div>
+<div class="pb">컨테이너화 + 배포.
+
+backend/Dockerfile: python:3.12-slim, pip install, uvicorn port 8000
+frontend/Dockerfile: node:20-alpine, npm run build, nginx 정적 서빙 port 80 (nginx.conf에 /api → backend 프록시)
+
+docker-compose.yml 최종:
+- postgres:16 (volume, init DB)
+- redis:7 (volume)
+- backend (env_file .env, depends_on)
+- frontend (port 80, depends_on backend)
+
+.github/workflows/deploy.yml: main push → docker build → compose up
+
+README.md:
+- 프로젝트 소개 + 스크린샷
+- 설치: git clone → cp .env.example .env → docker-compose up -d
+- 접속: http://localhost (강사: instructor@test.com / 수강생: student1@test.com)
+- API 문서: http://localhost:8000/docs
+- 기술 스택 목록</div>
+<div class="ob"><h4>✅ 산출물</h4><ul><li>Dockerfile 2개</li><li>docker-compose.yml</li><li>nginx.conf</li><li>CI/CD</li><li>README.md</li></ul></div></div>
+
+<!-- R20 -->
+<div class="r" id="r20"><div class="rh"><div class="rn" style="background:rgba(236,72,153,.2);color:#f472b6">20</div>
+<div><div class="rt">시드 데이터 & 최종 마무리</div><span class="tg be">백엔드</span><span class="tg fe">프론트</span></div></div>
+<div class="pb">시드 데이터 + 최종 테스트.
+
+backend/seed.py:
+- 강사 1명: instructor@test.com / password123
+- 수강생 5명: student1~5@test.com / password123
+- "Java 풀스택 3반" 과정 (language: java)
+- 6주치 커리큘럼 (RAG 인덱싱 포함)
+- 수강생별 샘플 코드 제출 3~5건 (의도적으로 다양한 에러 포함):
+  - student1: off-by-one 에러 반복 (경계값 사고 미형성)
+  - student2: NullPointerException 반복 (null 체크 회피)
+  - student3: 정상 코드 (병리 없음)
+  - student4: 무한루프 + 변수 스코프 혼동
+  - student5: 예외처리 회피 + 네이밍 비일관성
+- 각 제출에 대한 AI 진단 결과 (미리 생성해서 저장)
+- 심전도 이벤트 샘플 (student1: danger, student3: normal 등)
+- 이탈 위험도 스코어 (student1: 0.82, student4: 0.65 등)
+
+실행: python seed.py → 모든 샘플 데이터 삽입
+
+E2E 체크리스트:
+□ docker-compose up → 전체 기동
+□ http://localhost 접속 → 로그인 페이지
+□ instructor 로그인 → 대시보드 (심전도 5명 표시)
+□ student1 로그인 → 웹 IDE (Monaco 에디터)
+□ 코드 작성 → 제출 → 3초 내 진단 결과
+□ 힌트 채팅에 소크라테스식 힌트 표시
+□ 강사 대시보드에서 student1 🔴 표시
+□ 병리 히트맵 정상 렌더링
+□ 역학 리포트 Top 5 표시
+□ 수강생 병리 카드 타임라인 표시
+□ 이탈 위험도 스코어 표시
+□ 수강생 성장 그래프 표시
+□ GitHub public + API Key 미노출 확인</div>
+<div class="ob"><h4>✅ 산출물</h4><ul><li>seed.py (풍부한 샘플 데이터)</li><li>E2E 체크리스트</li><li>최종 버그 수정</li><li>공모전 제출 준비 완료</li></ul></div></div>
+
+<!-- 마무리 -->
+<div style="text-align:center;padding:50px 0 30px;color:#6b7280">
+<p style="font-size:1.2rem;margin-bottom:6px">
+<strong style="background:linear-gradient(135deg,#818cf8,#f472b6);-webkit-background-clip:text;-webkit-text-fill-color:transparent">
+CodePathology — 웹 IDE 버전 20라운드 개발명세서 끝</strong></p>
+<p>URL 하나로 심사 가능. Extension 설치 불필요. 브라우저에서 전부 동작.</p>
+<p style="margin-top:10px;font-size:12px">KIT 바이브코딩 공모전 2026</p>
+</div>
+
+</div>
